@@ -1,0 +1,161 @@
+Metadata-Version: 2.4
+Name: quantflow
+Version: 0.1.0
+Summary: Quantitative Analysis toolkit
+License: MIT License
+        
+        Copyright (c) 2026 Mark Henry
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: pandas>=1.5
+Requires-Dist: numpy>=1.23
+Provides-Extra: dev
+Requires-Dist: pytest>=7; extra == "dev"
+Dynamic: license-file
+
+# QuantFlow
+Quantitative Analysis toolkit 
+
+[![Mark Henry](https://img.shields.io/static/v1?label=Author&message=Mark%20Henry&color=success)](https://www.linkedin.com/in/marknhenry/) 
+[![License](https://img.shields.io/static/v1?label=License&message=MIT&color=blue)](https://www.linkedin.com/in/marknhenry/)
+
+## Setting up environment
+### First time Setup of Container: 
+``` bash 
+docker stop q1 # stop container
+docker rm q1 # remove container
+docker build -t "quant-base:v1" . # Build the image from Dockerfile
+docker run -it -p 8888:8888 -d --name q1 "quant-base:v1" # Run container
+docker exec -it q1 /bin/bash # Log into container
+```
+
+### Cloning the repo locally in container: 
+
+``` bash
+gh auth login
+git config --global user.email "marknhenry@live.com"
+git config --global user.name "Mark Henry"
+git config --global pull.rebase false
+gh repo clone marknhenry/PortfolioAnalysis
+```
+
+### Running Jupyter
+``` bash
+jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
+# Use the link provided
+```
+
+### Updating work on main
+
+``` bash
+git pull origin
+git add .
+git commit -m "message"
+git push origin
+```
+### Start and connect to running container
+
+``` bash
+docker ps -a
+docker start xxx
+```
+
+A small pandas extension that adds finance-oriented DataFrame methods
+using pandas accessors.
+
+## Steps to Update
+pip install build twine
+python -m build
+twine upload dist/*
+
+
+### Installation
+```bash
+pip install pandas-qx
+```
+
+In pandas 
+```python
+%load_ext autoreload
+%autoreload 2
+```
+
+### Work with editable version of package
+```bash
+pip install -e .
+```
+
+## Releasing a New Version to PyPI (`pandas-qx`)
+
+This document describes the **manual release process** for publishing a new version of `pandas-qx` to PyPI.
+
+---
+
+### 1. Update the Version Number
+
+Edit `pyproject.toml` and bump the version following semantic versioning.
+
+```toml
+[project]
+name = "pandas-qx"
+# pandas_qx/__init__.py
+__version__ = "0.4.0"
+```
+
+### 2. Update the Changelog in CHANGELOG.md
+
+```
+## 0.4.0 – 26 Apr 2026
+
+### Added
+- New XYZ feature
+
+### Fixed
+- Bug in ABC
+```
+
+### 3. Commit the Release Changes
+```bash
+git add .
+git commit -m "Release 0.x.x"
+git tag v0.x.x
+git push origin main
+git push origin v0.x.x
+```
+
+### 4. Build the distribution artifacts & Upload
+```bash
+rm -rf dist build *.egg-info
+python -m build
+python -m twine check dist/*
+python -m twine upload dist/*
+```
+
+### 5. Verify
+```bash
+pip install --upgrade pandas-qx
+python - <<EOF
+import pandas_qx
+print(pandas_qx.__version__)
+EOF
+```
