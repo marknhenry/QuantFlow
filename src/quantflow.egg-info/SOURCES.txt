@@ -12,7 +12,9 @@ src/quantflow/accessors/__init__.py
 src/quantflow/accessors/returns_accessor.py
 src/quantflow/core/__init__.py
 src/quantflow/core/returns_core.py
+src/quantflow/core/summary_core.py
 src/quantflow/data/Portfolios_Formed_on_ME_monthly_EW.csv
 src/quantflow/data/__init__.py
 src/quantflow/data/edhec-hedgefundindices.csv
+tests/test_describe_returns.py
 tests/test_returns.py
