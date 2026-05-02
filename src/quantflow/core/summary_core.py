@@ -4,7 +4,7 @@ from scipy.stats import jarque_bera, norm
 from .utils import infer_frequency
 
 
-def is_normal(s: pd.Series, pvalue: float = 0.01) -> bool:
+def is_normal(s: pd.Series, pvalue: float = 0.05) -> bool:
     """
     Test whether a return series is normally distributed using the Jarque-Bera test.
 
@@ -15,7 +15,7 @@ def is_normal(s: pd.Series, pvalue: float = 0.01) -> bool:
     pvalue : float
         Significance level. Returns ``True`` (normal) when the JB p-value is
         greater than or equal to this threshold, ``False`` otherwise.
-        Defaults to ``0.01``.
+        Defaults to ``0.05``.
 
     Returns
     -------
@@ -29,7 +29,7 @@ def is_normal(s: pd.Series, pvalue: float = 0.01) -> bool:
 def _is_price_data(s: pd.Series) -> bool:
     """
     Detect whether a series contains prices or returns.
-    
+
     Heuristic:
     - Prices: all values > 0, no negative values (can't have negative price)
     - Returns: can be negative, typically in range [-1, 1] (including extreme months)
@@ -49,7 +49,8 @@ def _is_price_data(s: pd.Series) -> bool:
 def describe_returns(
     df: pd.DataFrame,
     annualized: bool = True,
-    pvalue: float = 0.01,
+    pvalue: float = 0.05,
+    risk_free_rate: float = 0.04,
 ) -> pd.DataFrame:
     """
     Compute a return/risk summary for every numeric column in the DataFrame.
@@ -69,7 +70,9 @@ def describe_returns(
     annualized : bool
         Annualize metrics using the frequency inferred from the index.
     pvalue : float
-        Significance level for the Jarque-Bera normality test. Defaults to ``0.01``.
+        Significance level for the Jarque-Bera normality test. Defaults to ``0.05``.
+    risk_free_rate : float
+        Risk-free rate for Sharpe ratio calculation. Defaults to ``0.04`` (4%).
 
     Returns
     -------
@@ -77,16 +80,17 @@ def describe_returns(
         Summary DataFrame with metrics as the index and tickers as columns.
     """
     cols = [
-        col for col in df.columns
+        col
+        for col in df.columns
         if df[col].dtype in ["float64", "int64"] and not col.startswith("_q_")
     ]
 
     data = df[cols]
-    
+
     # Check if input is prices or returns
     if _is_price_data(data.iloc[:, 0]):
         data = data.pct_change().dropna()
-    
+
     rets = data
     factor = infer_frequency(df) if annualized else None
 
@@ -94,7 +98,7 @@ def describe_returns(
     vol = rets.std(ddof=0)
     semi_deviation = rets[rets < 0].std(ddof=0)
     wealth = (1 + rets).cumprod().iloc[-1]
-    
+
     # Calculate max drawdown
     cumulative_wealth = (1 + rets).cumprod()
     running_max = cumulative_wealth.expanding().max()
@@ -104,53 +108,65 @@ def describe_returns(
     if annualized:
         n = rets.count()
         summary_returns = (compound ** (factor / n)) - 1
-        summary_volatility = vol * (factor ** 0.5)
-        semi_deviation_annualized = semi_deviation * (factor ** 0.5)
+        summary_volatility = vol * (factor**0.5)
+        semi_deviation_annualized = semi_deviation * (factor**0.5)
+        sharpe = (summary_returns - risk_free_rate) / summary_volatility
     else:
         summary_returns = compound - 1
         summary_volatility = vol
         semi_deviation_annualized = semi_deviation
-        
+        sharpe = (summary_returns - risk_free_rate) / summary_volatility
+
+    # Working on Value at Risk
+    # Historical VaR and CVaR
+    historical_var = -np.percentile(rets, pvalue * 100, axis=0)
+
+    # Gaussian VaR and CVaR
+    z = norm.ppf(pvalue)
+    gaussian_var = -(rets.mean() + z * rets.std(ddof=0))
+
+    # Cornich-Fisher VaR and CVaR
     mu = rets.mean()
     sigma = rets.std(ddof=0)
-    z = norm.ppf(pvalue)
     s = rets.skew()
     k = rets.kurt()  # pandas gives excess kurtosis already
 
     z_cf = (
         z
         + (z**2 - 1) * s / 6
-        + (z**3 - 3*z) * k / 24
-        - (2*z**3 - 5*z) * (s**2) / 36
+        + (z**3 - 3 * z) * (k - 3) / 24
+        - (2 * z**3 - 5 * z) * (s**2) / 36
     )
 
-    var_cf_return = rets.mean() + z_cf * rets.std(ddof=0)
-    
-    var_gauss_return = rets.mean() + z * rets.std(ddof=0)
+    cornish_fisher_var = -(mu + z_cf * sigma)
 
-    return pd.DataFrame({
-        "Rets (Ann)": summary_returns
-        , "Volatility (Ann)": summary_volatility
-        , "Wealth Index": wealth.round(2)
-        , "Max Drawdown": max_drawdown
-        # , "Mean": rets.mean()
-        # , "Var": rets.var()
-        # , "Std": rets.std()
-        # , "Min": rets.min()
-        # , "25%": rets.quantile(0.25)
-        # , "50%": rets.quantile(0.5)
-        # , "75%": rets.quantile(0.75)
-        # , "Max": rets.max()
-        , "Skewness": rets.skew()
-        # , "Kurtosis": rets.kurt()
-        , "Excess Kurtosis": rets.kurt() - 3
-        , "Is Normal (JB)": rets.apply(lambda s: is_normal(s, pvalue=pvalue))
-        , "Semi-Deviation": semi_deviation_annualized
-        , "VaR Historic": np.percentile(rets, pvalue * 100)
-        , "CVaR Historic": rets[rets <= np.percentile(rets, pvalue * 100)].mean()
-        , "VaR Gaussian": var_gauss_return
-        , "CVaR Gaussian": mu - sigma * norm.pdf(z) / pvalue
-        , "VaR Cornish-Fisher": var_cf_return
-        , "CVaR Cornish-Fisher": rets[rets <= var_cf_return].mean()
-        })
-
+    return pd.DataFrame(
+        {
+            "Rets (Ann)": summary_returns,
+            "Volatility (Ann)": summary_volatility,
+            "Sharpe Ratio": sharpe,
+            "Wealth Index": wealth.round(2),
+            "Max Drawdown": max_drawdown
+            # , "Mean": rets.mean()
+            # , "Var": rets.var()
+            # , "Std": rets.std()
+            # , "Min": rets.min()
+            # , "25%": rets.quantile(0.25)
+            # , "50%": rets.quantile(0.5)
+            # , "75%": rets.quantile(0.75)
+            # , "Max": rets.max()
+            ,
+            "Skewness": rets.skew()
+            # , "Kurtosis": rets.kurt()
+            ,
+            "Excess Kurtosis": rets.kurt() - 3,
+            "Is Normal (JB)": rets.apply(lambda s: is_normal(s, pvalue=pvalue)),
+            "Semi-Deviation": semi_deviation_annualized,
+            "VaR Historic": historical_var,
+            "CVaR Historic": rets[rets <= historical_var].mean(),
+            "VaR Gaussian": gaussian_var,
+            "CVaR Gaussian": rets[rets <= gaussian_var].mean(),
+            "VaR Cornish-Fisher": cornish_fisher_var,
+            "CVaR Cornish-Fisher": rets[rets <= cornish_fisher_var].mean(),
+        }
+    )

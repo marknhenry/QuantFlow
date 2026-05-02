@@ -57,7 +57,9 @@ class QFAccessor:
     def returns(self) -> ReturnsNamespace:
         return ReturnsNamespace(self._obj)
 
-    def describe_returns(self, annualized: bool = True, pvalue: float = 0.01) -> pd.DataFrame:
+    def describe_returns(
+        self, annualized: bool = True, pvalue: float = 0.05, risk_free_rate: float = 0.04
+    ) -> pd.DataFrame:
         """
         Compute a return/risk summary for each ticker column.
 
@@ -66,11 +68,15 @@ class QFAccessor:
         annualized : bool
             Annualize metrics using the frequency inferred from the index.
         pvalue : float
-            Significance level for the Jarque-Bera normality test. Defaults to ``0.01``.
+            Significance level for the Jarque-Bera normality test. Defaults to ``0.05``.
+        risk_free_rate : float
+            Risk-free rate for Sharpe ratio calculation. Defaults to ``0.04`` (4%).
 
         Returns
         -------
         pd.DataFrame
             Summary with metrics as index and tickers as columns.
         """
-        return _describe_returns(self._obj, annualized=annualized, pvalue=pvalue)
+        return _describe_returns(
+            self._obj, annualized=annualized, pvalue=pvalue, risk_free_rate=risk_free_rate
+        )

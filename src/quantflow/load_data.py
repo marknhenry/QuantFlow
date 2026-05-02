@@ -32,3 +32,16 @@ def get_hfi_returns():
     hfi.index = hfi.index.to_period('M')
 
     return hfi
+
+def get_ind_returns():
+    """
+    Load the Ken French 30 Industry Portfolios
+    """
+
+    data_path = files("quantflow").joinpath("data/ind30_m_vw_rets.csv")
+    ind = pd.read_csv(data_path, header=0, index_col=0, na_values=-99.99)
+    ind = ind / 100
+    ind.index = pd.to_datetime(ind.index, format='%Y%m').to_period('M')
+    ind.columns = [col.strip() for col in ind.columns]
+
+    return ind

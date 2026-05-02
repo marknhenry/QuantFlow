@@ -124,3 +124,90 @@ class TestDescribeReturnsRealData:
         assert "LargeCap" in result.index
         assert "Is Normal (JB)" in result.columns
         assert result.loc["SmallCap", "Wealth Index"] > 1  # Positive long-term return
+
+    def test_hfi_var_historic_matches_expected_values(self):
+        """Regression test: VaR Historic at pvalue=0.05 matches known HFI values."""
+        import quantflow as qf
+
+        hfi = qf.load_data.get_hfi_returns()
+        result = hfi.qf.describe_returns(pvalue=0.05)["VaR Historic"]
+
+        expected = pd.Series(
+            {
+                "Convertible Arbitrage": 0.0158,
+                "CTA Global": 0.0317,
+                "Distressed Securities": 0.0197,
+                "Emerging Markets": 0.0425,
+                "Equity Market Neutral": 0.0081,
+                "Event Driven": 0.0253,
+                "Fixed Income Arbitrage": 0.0079,
+                "Global Macro": 0.0150,
+                "Long/Short Equity": 0.0260,
+                "Merger Arbitrage": 0.0105,
+                "Relative Value": 0.0117,
+                "Short Selling": 0.0678,
+                "Funds Of Funds": 0.0205,
+            },
+            name="VaR Historic",
+            dtype="float64",
+        )
+
+        pd.testing.assert_series_equal(result.round(4), expected)
+
+    def test_hfi_var_gaussian_matches_expected_values(self):
+        """Regression test: VaR Gaussian at pvalue=0.05 matches known HFI values."""
+        import quantflow as qf
+
+        hfi = qf.load_data.get_hfi_returns()
+        result = hfi.qf.describe_returns(pvalue=0.05)["VaR Gaussian"]
+
+        expected = pd.Series(
+            {
+                "Convertible Arbitrage": 0.0217,
+                "CTA Global": 0.0342,
+                "Distressed Securities": 0.0210,
+                "Emerging Markets": 0.0472,
+                "Equity Market Neutral": 0.0088,
+                "Event Driven": 0.0211,
+                "Fixed Income Arbitrage": 0.0146,
+                "Global Macro": 0.0188,
+                "Long/Short Equity": 0.0264,
+                "Merger Arbitrage": 0.0104,
+                "Relative Value": 0.0131,
+                "Short Selling": 0.0801,
+                "Funds Of Funds": 0.0213,
+            },
+            name="VaR Gaussian",
+            dtype="float64",
+        )
+
+        pd.testing.assert_series_equal(result.round(4), expected)
+
+    def test_hfi_var_cornish_fisher_matches_expected_values(self):
+        """Regression test: VaR Cornish-Fisher at pvalue=0.05 matches known HFI values."""
+        import quantflow as qf
+
+        hfi = qf.load_data.get_hfi_returns()
+        result = hfi.qf.describe_returns(pvalue=0.05)["VaR Cornish-Fisher"]
+
+        expected = pd.Series(
+            {
+                "Convertible Arbitrage": 0.0261,
+                "CTA Global": 0.0345,
+                "Distressed Securities": 0.0261,
+                "Emerging Markets": 0.0549,
+                "Equity Market Neutral": 0.0112,
+                "Event Driven": 0.0265,
+                "Fixed Income Arbitrage": 0.0185,
+                "Global Macro": 0.0144,
+                "Long/Short Equity": 0.0291,
+                "Merger Arbitrage": 0.0132,
+                "Relative Value": 0.0168,
+                "Short Selling": 0.0689,
+                "Funds Of Funds": 0.0225,
+            },
+            name="VaR Cornish-Fisher",
+            dtype="float64",
+        )
+
+        pd.testing.assert_series_equal(result.round(4), expected)

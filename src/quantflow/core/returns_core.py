@@ -90,5 +90,6 @@ def calculate_drawdown(df: pd.DataFrame) -> pd.DataFrame:
         peak   = wealth.cummax()
         new_cols[f"_q_{col}_Wealth"]   = wealth
         new_cols[f"_q_{col}_Peak"]     = peak
-        new_cols[f"_q_{col}_Drawdown"] = peak - wealth
+        new_cols[f"_q_{col}_Drawdown"] = wealth - peak
+        new_cols[f"_q_{col}_DrawdownPct"] = (wealth - peak) / peak
     return df.assign(**new_cols)
