@@ -12,10 +12,6 @@ def price_df():
         "asset1": [100.0, 110.0, 105.0, 115.5],
         "asset2": [200.0, 190.0, 210.0, 205.0],
     })
-    
-@pytest.fixture
-def ffme_df():
-    return quantflow.load_data.get_ffme_returns()
 
 
 class TestCalculateReturnsFunction:
@@ -71,10 +67,3 @@ class TestCalculateReturnsAccessor:
             price_df.qf.returns.calculate_returns(),
             calculate_returns(price_df),
         )
-        
-    def test_accessor_functions(self, ffme_df):
-        """Accessor should compute returns for all columns in the real FFME dataset."""
-        returns = ffme_df.qf.describe_returns()
-        assert isinstance(returns, pd.DataFrame)
-        assert list(returns.columns) == ["SmallCap", "LargeCap", "L"]
-    

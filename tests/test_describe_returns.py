@@ -17,7 +17,9 @@ def rets_df() -> pd.DataFrame:
         auto_adjust=True,
         progress=False,
     )["Close"]
-    return prices.pct_change().dropna()
+    rets = prices.pct_change().dropna()
+    rets.index = rets.index.to_period("D")
+    return rets
 
 
 # ── helper is_normal ─────────────
@@ -56,11 +58,11 @@ class TestDescribeReturnsFunction:
 
     def test_has_is_normal_column(self, rets_df):
         result = describe_returns(rets_df)
-        assert "Is Normal" in result.columns
+        assert "Is Normal (JB)" in result.columns
 
     def test_is_normal_values_are_bool(self, rets_df):
         result = describe_returns(rets_df)
-        assert result["Is Normal"].dtype == bool
+        assert result["Is Normal (JB)"].dtype == bool
 
     def test_non_normal_data_returns_false(self):
         rng = np.random.default_rng(1)
@@ -69,14 +71,14 @@ class TestDescribeReturnsFunction:
             index=pd.period_range("2000-01", periods=200, freq="M"),
         )
         result = describe_returns(df, annualized=False)
-        assert result.loc["A", "Is Normal"] == False
+        assert result.loc["A", "Is Normal (JB)"] == False
 
     def test_custom_pvalue_threshold(self, rets_df):
         result_strict = describe_returns(rets_df, pvalue=0.001)
         result_loose  = describe_returns(rets_df, pvalue=0.99)
         # With pvalue=0.99 almost nothing passes; with 0.001 more may pass
-        assert isinstance(result_strict["Is Normal"].iloc[0], (bool, np.bool_))
-        assert isinstance(result_loose["Is Normal"].iloc[0], (bool, np.bool_))
+        assert isinstance(result_strict["Is Normal (JB)"].iloc[0], (bool, np.bool_))
+        assert isinstance(result_loose["Is Normal (JB)"].iloc[0], (bool, np.bool_))
 
     def test_does_not_mutate_input(self, rets_df):
         original_cols = list(rets_df.columns)
@@ -96,7 +98,7 @@ class TestDescribeReturnsAccessor:
         assert isinstance(rets_df.qf.describe_returns(), pd.DataFrame)
 
     def test_accessor_has_is_normal(self, rets_df):
-        assert "Is Normal" in rets_df.qf.describe_returns().columns
+        assert "Is Normal (JB)" in rets_df.qf.describe_returns().columns
 
     def test_accessor_matches_standalone(self, rets_df):
         pd.testing.assert_frame_equal(
@@ -106,7 +108,7 @@ class TestDescribeReturnsAccessor:
 
     def test_accessor_custom_pvalue(self, rets_df):
         result = rets_df.qf.describe_returns(pvalue=0.05)
-        assert "Is Normal" in result.columns
+        assert "Is Normal (JB)" in result.columns
 
 
 # Real market data test
@@ -120,5 +122,5 @@ class TestDescribeReturnsRealData:
         assert isinstance(result, pd.DataFrame)
         assert "SmallCap" in result.index
         assert "LargeCap" in result.index
-        assert "Is Normal" in result.columns
+        assert "Is Normal (JB)" in result.columns
         assert result.loc["SmallCap", "Wealth Index"] > 1  # Positive long-term return
