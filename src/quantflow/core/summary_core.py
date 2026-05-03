@@ -142,7 +142,7 @@ def describe_returns(
 
     return pd.DataFrame(
         {
-            "Rets (Ann)": summary_returns,
+            "AnnualizedReturns": summary_returns,
             "Volatility (Ann)": summary_volatility,
             "Sharpe Ratio": sharpe,
             "Wealth Index": wealth.round(2),

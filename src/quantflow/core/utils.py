@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 # Pandas freq alias prefixes → annualization factor
@@ -79,3 +80,27 @@ def infer_frequency(df: pd.DataFrame) -> int:
         f"Supported: daily (D/B), weekly (W), monthly (M/ME), "
         f"quarterly (Q/QE), annual (A/Y/YE)."
     )
+
+def portfolio_returns(weights, returns): 
+    """ Weights -> Returns"""
+    return weights.T @ returns
+
+def portfolio_volatility(weights, covmat): 
+    """ Weights -> Vol"""
+    return (weights.T @ covmat @ weights)**0.5
+
+def plot_ef2(n_points, er, cov, figsize=(12, 6)):
+    """ Plots the 2-asset efficient frontier"""
+    if er.shape[0] !=2:
+        raise ValueError('plot_ef2 can only plot 2-asset frontiers')
+    
+    weights = [np.array([w, 1-w]) for w in np.linspace(0, 1, n_points)]
+    rets = [portfolio_returns(w, er) for w in weights]
+    vols = [portfolio_volatility(w, cov) for w in weights]
+    ef = pd.DataFrame({'Returns': rets, 'Volatility': vols})
+    
+    asset1, asset2 = er.index[0], er.index[1]
+    ax = ef.plot.line(x='Volatility', y='Returns', style='.-', figsize=figsize)
+    ax.set_ylabel('Returns')
+    ax.set_title(f'2-Asset Efficient Frontier of {asset1} and {asset2}')
+    return ax

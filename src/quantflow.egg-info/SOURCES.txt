@@ -11,6 +11,7 @@ src/quantflow.egg-info/top_level.txt
 src/quantflow/accessors/__init__.py
 src/quantflow/accessors/returns_accessor.py
 src/quantflow/core/__init__.py
+src/quantflow/core/portfolio_core.py
 src/quantflow/core/returns_core.py
 src/quantflow/core/summary_core.py
 src/quantflow/core/utils.py
@@ -20,6 +21,7 @@ src/quantflow/data/edhec-hedgefundindices.csv
 src/quantflow/data/ind30_m_vw_rets.csv
 tests/test_describe_returns.py
 tests/test_drawdown.py
+tests/test_optimize_allocation.py
 tests/test_returns.py
 tests/test_utils.py
 tests/test_wealth_index.py
