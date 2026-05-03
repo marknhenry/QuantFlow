@@ -2,6 +2,7 @@ FROM ubuntu:latest
 
 ENV PATH="/root/miniconda3/bin:${PATH}"
 ARG PATH="/root/miniconda3/bin:${PATH}"
+EXPOSE 8501
 
 # Basic Installation and fixing timezone
 RUN apt-get update  \

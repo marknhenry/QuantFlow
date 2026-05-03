@@ -1,5 +1,10 @@
 {
-  // ...
-  "build": { "dockerfile": "Dockerfile" }
-  // ...
+  "build": { "dockerfile": "Dockerfile" },
+  "forwardPorts": [8501],
+  "portsAttributes": {
+    "8501": {
+      "label": "Streamlit",
+      "onAutoForward": "openBrowser"
+    }
+  }
 }
